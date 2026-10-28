@@ -29,6 +29,11 @@ class NoSuchParty(DomainError):
     status, type, title = 404, "/errors/no-such-party", "No such party"
 
 
+class NoSuchSeating(DomainError):
+    status, type, title = 404, "/errors/no-such-seating", "No such seating"
+
+
+
 class PartyTooBig(DomainError):
     status, type, title = 400, "/errors/party-too-big", "No table here could seat that many"
 
@@ -50,3 +55,14 @@ VALIDATION_QUERY = (400, "/errors/validation", "Invalid filter value")
 NOT_FOUND = (404, "/errors/not-found", "No such resource")
 METHOD_NOT_ALLOWED = (405, "/errors/method-not-allowed", "Method not allowed")
 HTTP = "/errors/http"
+
+
+class AlreadyLeft(DomainError):
+    status, type, title = 409, "/errors/already-left", "The party has already left"
+
+class NotLeftYet(DomainError):
+    status, type, title = 409, "/errors/not-left-yet", "The party has not left yet"
+
+
+class AlreadyCleared(DomainError):
+    status, type, title = 409, "/errors/already-cleared", "The table has already been cleared"
