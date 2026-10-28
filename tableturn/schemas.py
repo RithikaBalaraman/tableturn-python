@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from typing import Annotated, Literal
 from pydantic import BaseModel, Field, PlainSerializer
 
-TableState = Literal["waiting", "seated", "left", "cleared"]
+TableState = Literal["free","waiting", "seated", "left", "cleared"]
 PartyState = Literal["waiting", "seated", "left", "cleared"]
 Section = str
 
@@ -61,3 +61,19 @@ class PartyOut(BaseModel):
     quoted_minutes: int
     quoted_at: UtcZ
     waited_minutes: int | None = None
+    table: str | None = None
+
+
+
+
+class SeatIn(BaseModel):
+    party_id: str = Field(min_length=2, max_length=12)
+    table: str = Field(min_length=2, max_length=8)
+
+
+class SeatOut(BaseModel):
+    seating_id: str
+    party_id: str
+    table: str
+    seated_at: UtcZ
+    waited_minutes: int
