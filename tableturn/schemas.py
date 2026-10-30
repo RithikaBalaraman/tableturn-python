@@ -8,7 +8,7 @@ TableState = Literal["free","waiting", "seated", "uncleared","left", "cleared"]
 PartyState = Literal["waiting", "seated", "left", "cleared"]
 EventKind = Literal["joined", "quoted", "seated", "left", "cleared"]
 Upgrade = Literal["never", "when_nobody_larger_waits", "always"]
-Section = Literal["Indoor", "Patio", "Bar"]
+Section = Literal["Window", "Garden", "Indoor"]
 
 
 def _iso_z(dt: datetime) -> str:
@@ -24,7 +24,7 @@ UtcZ = Annotated[datetime, PlainSerializer(_iso_z, return_type=str)]
 class TableOut(BaseModel):
     no: str
     seats: int
-    section: Section # or your appropriate section type/literal
+    section: Section
     state: TableState
     party_id: str | None = None          # seated and uncleared tables: whose table it is
     seating_id: str | None = None        # seated and uncleared tables: what the floor's Leave / Clear act on
@@ -77,8 +77,6 @@ class PartyOut(BaseModel):
     events: list[EventOut]
 
 
-
-
 class SeatIn(BaseModel):
     party_id: str = Field(min_length=2, max_length=12)
     table: str = Field(min_length=2, max_length=8)
@@ -108,3 +106,7 @@ class SettingsOut(BaseModel):
     default_quote_minutes: int
     small_party_upgrade: Upgrade
     max_covers: int
+
+
+class HealthOut(BaseModel):
+    status: Literal["ok"]

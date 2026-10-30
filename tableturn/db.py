@@ -33,3 +33,9 @@ EVENT_TRIGGERS = [
     ("CREATE TRIGGER IF NOT EXISTS events_no_delete BEFORE DELETE ON events "
      "BEGIN SELECT RAISE(ABORT, 'events are append-only'); END;"),
 ]
+
+
+def ping(session: Session) -> None:
+    """Health: a round trip through the session. A database that cannot be reached raises, and the one 500
+    handler answers."""
+    session.execute(text("SELECT 1"))
