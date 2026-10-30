@@ -16,10 +16,19 @@ evening. This folder is the finished project.
 | The API | Routers per resource, one error shape for every error, docs that list what each endpoint can answer |
 | Rules | `tests/rules.csv` — the rule table under all three `SMALL_PARTY_UPGRADE` settings; `GET /settings` |
 | The image | A Dockerfile; the app binds `HOST=0.0.0.0`, so the floor is reachable from the kitchen screen |
-
+| Running it | Data on a volume, every setting from an env-file, `.dockerignore`, logs on stdout |
 ## Run it
 
 The two commands:
+
+For the till PC, run it with the database on a named volume and the settings from the env-file — copy
+`.env.example` to `.env` first:
+
+```bash
+docker run -d --name tableturn -p 8080:8080 -v tableturn-data:/data --env-file .env tableturn
+
+```
+
 
 ```bash
 docker build -t tableturn .
@@ -32,22 +41,45 @@ The image starts the app with
 CMD ["sh", "-c", "exec uvicorn tableturn.app:app --host \"$HOST\" --port \"$PORT\""]
 ```
 
-so `HOST` and `PORT` come from the environment: the image sets `HOST=0.0.0.0` and `PORT=8080`.
+so `HOST` and `PORT` come from the environment: the image sets `HOST=0.0.0.0` and `PORT=8080`, and the env-file can
+change them without a rebuild. `DATABASE_URL` is not baked into the image; the env-file points it at the volume.
 
 Open `http://<till-pc-ip>:8080/` from the kitchen screen — the floor, the waitlist, one party, the rule book, the API
-and the runtime, with a walkthrough. Docs at `/docs`, health at `/healthz`.
+and the runtime, with a walkthrough. Docs at `/docs`, health at `/healthz`, logs with
+`docker logs -f tableturn`.
 
+The nightly power cut: `docker rm -f tableturn`, then the same `docker run` — every party and their quoted time
+are still on the list, because the database lives on the `tableturn-data` volume. To change a rule, edit one line of
+the env-file and run the container again; no rebuild:
+
+```
+DATABASE_URL=sqlite:////data/tableturn.db
+DEFAULT_QUOTE_MINUTES=40
+SMALL_PARTY_UPGRADE=when_nobody_larger_waits     # never | when_nobody_larger_waits | always
+SEED_DIR=seed
+HOST=0.0.0.0
+PORT=8080
+```
 ## Verified on this build
 
-Run on 2026-09-26 on this machine (Docker 29.8.0) with the image tagged `tableturn-q2` and host port 8182:
+Run on 2026-09-26 on this machine (Docker 29.8.0) with the image tagged `tableturn-q2` ,host port 8182,a named
+volume and a copy of `.env.example` as the env-file:
 
 - `docker build` succeeds; the image is 248 MB (247,734,120 bytes).
 - `GET /healthz` → `200 {"status":"ok"}` from the host, and `b'{"status":"ok"}'` from another container
   (`docker run --rm --entrypoint python <image> -c "…urlopen('http://host.docker.internal:8182/healthz')…"`);
   `GET /branches/Baner/tables` from another container → `200`, 22 tables, 22 free.
   - `docker run --rm --entrypoint pip <image> freeze` equals `requirements.lock`: the same 17 pins (pip, setuptools
-  and wheel aside). `find /app -name __pycache__ -o -name '*.db' -o -name sandbox -o -name tests` prints nothing.
-- The browser against the container: Leave and Clear on the floor, the party card's 'turn N min', and the rule book's rows under each setting.
+  and wheel aside). `find /app -name __pycache__ -o -name '*.db' -o -name sandbox -o -name tests` prints nothing.   booked at T11; W003 waiting. `docker rm -f` and the same `docker run` on the same volume: `GET /parties/W001..W003`
+  and the seated tables compared byte for byte before and after — unchanged.
+  - `DEFAULT_QUOTE_MINUTES=30` in a copy of the env-file, container re-run: `GET /settings` →
+  `{"default_quote_minutes":30,…}`; a new party is quoted 30, the parties already on the list keep 40. `PORT=9000` in
+  another copy (mapped `-p 8182:9000`): the app logs `ready host=0.0.0.0 port=9000` and answers — no rebuild.
+- `docker logs`: one line per request (`request method=POST path=/waitlist status=201 request_id=…`) and one per
+  event (`event kind=joined party_id=W005 seating_id=- branch=Baner`); no guest name or phone number appears.
+- `docker diff <container>` shows only `A /data` (the volume mount point) — nothing written under `/app`.
+- The browser against the container: Leave and Clear on the floor, the party card's 'turn N min', the rule book's rows under each setting, and Before restart → `docker rm -f` + `docker run` → After restart: "unchanged — the same 
+  5 parties".
 - Door to bill, through the browser against the container:
 
 
@@ -89,6 +121,7 @@ seat a two at a four-top while a four is waiting → 409 overtaking with `must_s
 - Ids are opaque strings (`W031`, `S204`, `T09`); database integers never reach the wire or the logs. Timestamps are
   UTC with a Z.
 - A party's size is `covers`; a table's capacity is `seats`. Minutes are whole numbers, rounded down.
+- Logs are one line per request and per event on stdout; a guest's phone number never appears in a log line or an event.
 
 <!-- learntube:start -->
 ---
@@ -106,7 +139,7 @@ seat a two at a four-top while a four is waiting → 409 overtaking with `must_s
 - [x] Ticket 7 · One file becomes an app
 - [x] Ticket 8 · The rule table, and then the rule changes
 - [x] Ticket 9 · It runs on the machine by the till
-- [ ] Ticket 10 · It survives the nightly power cut
+- [x] Ticket 10 · It survives the nightly power cut
 
 Built by Rithika B on [LearnTube Guided Projects](https://guidedprojects.learntube.ai).
 <!-- learntube:end -->
