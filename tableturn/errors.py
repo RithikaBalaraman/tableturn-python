@@ -49,6 +49,11 @@ class AlreadySeated(DomainError):
 class TableNotCleared(DomainError):
     status, type, title = 409, "/errors/table-not-cleared", "The table has not been cleared"
 # (status, type, title) of the errors the framework raises rather than a service: 422 for a body that fails validation
+class Overtaking(DomainError):
+    """A smaller party may not take a larger table ahead of a larger party the table would fit."""
+    status, type, title = 409, "/errors/overtaking", "A larger party waiting must be seated first"
+
+
 # and 400 for a query parameter that does ("filter values outside the enum are 400"), 404/405 for a path or a method the app does not serve (every error is problem+json), and the one 500 for anything unexpected.
 VALIDATION_BODY = (422, "/errors/validation", "The request body is not valid")
 VALIDATION_QUERY = (400, "/errors/validation", "Invalid filter value")

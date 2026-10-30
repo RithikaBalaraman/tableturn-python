@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, PlainSerializer
 TableState = Literal["free","waiting", "seated", "uncleared","left", "cleared"]
 PartyState = Literal["waiting", "seated", "left", "cleared"]
 EventKind = Literal["joined", "quoted", "seated", "left", "cleared"]
+Upgrade = Literal["never", "when_nobody_larger_waits", "always"]
 Section = Literal["Indoor", "Patio", "Bar"]
 
 
@@ -101,3 +102,9 @@ class ClearOut(BaseModel):
     table: str
     turn_minutes: int
     cleared_at: UtcZ
+
+
+class SettingsOut(BaseModel):
+    default_quote_minutes: int
+    small_party_upgrade: Upgrade
+    max_covers: int
